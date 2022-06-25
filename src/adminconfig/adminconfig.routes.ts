@@ -20,7 +20,7 @@ import * as adminconfig from "./adminconfig.controller";
 
 const router = express.Router();
 
-//router.post("/new", verifyToken, isAdminOrSubadmin, postConfigurationValidator(), expressValidator,  adminconfig.postConfiguration);
+router.post("/new", verifyToken, isAdminOrSubadmin, postConfigurationValidator(), expressValidator,  adminconfig.postConfiguration);
 router.put("/:id", verifyToken,  isAdminOrSubadmin, postConfigurationValidator(), expressValidator,  adminconfig.updateConfiguration);
 router.get("/", verifyToken, isAdminOrSubadmin, adminconfig.getConfiguration)
 router.get("/dasboard/details", verifyToken, isAdminOrSubadmin, adminconfig.getDashboardDetails)

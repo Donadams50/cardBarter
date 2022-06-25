@@ -9,7 +9,11 @@ const adminconfigSchema = new mongoose.Schema(
                 maximumWithdrawer: {
                         type: Number,
                         required: true,
-                }
+                },
+                // automatedWithdrawer: {
+                //        type: Boolean ,
+                //        required: true
+                // }
         },
         {
                 timestamps: true,

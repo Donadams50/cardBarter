@@ -89,7 +89,7 @@ export async function getBankCode (req: any, res: any): Promise<Response> {
     try{
         console.log("getBankCode")
         const headers = {
-            'Authorization': process.env.flutterToken!,
+            'Authorization': process.env.flutterwaveToken!,
             'Content-Type': 'application/json'      
             }
         

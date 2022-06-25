@@ -145,6 +145,7 @@ export const postGiftcardTradeValidator = (): ValidationChain[] => [
 export const postConfigurationValidator = (): ValidationChain[] => [
         body('minimumWithdrawer').notEmpty().isNumeric().withMessage('Minumum withdrawwer is required and must be a number'),
         body('maximumWithdrawer').notEmpty().isNumeric().withMessage('Maximum withdrawer is required and must be a number'), 
+        
 ];
 
 

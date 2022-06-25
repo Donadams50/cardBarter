@@ -31,7 +31,8 @@ router.delete("/giftcard/subcategory/listing/:id", verifyToken, isAdmin, ratecal
 
 
 
-//router.post("/giftcard/categories",  ratecalculator.createGiftCardCategory);
+router.post("/giftcard/categories",  ratecalculator.createGiftCardCategory);
+router.post("/giftcard/subcategories",  ratecalculator.createAllsubCategory);
 
 
 

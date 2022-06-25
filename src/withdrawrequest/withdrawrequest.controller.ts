@@ -7,6 +7,8 @@ import { Member } from '../members/members.model';
 import { Adminconfig } from '../adminconfig/adminconfig.model';
 import { Notifications } from '../notifications/notifications.model';
 import { Transaction } from '../transactions/transaction.model';
+import axios from 'axios';
+import {v4} from 'uuid';
 import moment from 'moment';
  dotenv.config();
 
@@ -27,7 +29,7 @@ export async function withdrawFunds(req: any, res: any): Promise<Response> {
             const maximumWithdrawer = parseFloat(findConfiguration.maximumWithdrawer)
             const narrations =  narration || "Fund withdrawer"
             if(walletBalance >= transAmount ){
-                if(transAmount > minimumWithdrawer &&  transAmount < maximumWithdrawer ){
+                if(transAmount >= minimumWithdrawer &&  transAmount <= maximumWithdrawer ){
 
                         const transaction = new Transaction({      
                             status: "Pending",
@@ -208,7 +210,7 @@ export async function getWithdrawerRequestById(req: any, res: any): Promise<Resp
     }
 };
 
-//manua success
+//manual success
 export async function manualSuccessWithdrawerRequest(req: any, res: any): Promise<Response> {
     try{
               const _id = req.params.withdrawerrequestId;
@@ -254,6 +256,259 @@ export async function manualSuccessWithdrawerRequest(req: any, res: any): Promis
     }
 
 };
+
+
+export async function flutterwaveWithdrawer (req: any, res: any): Promise<Response> {
+
+       
+    try{
+             //const sess = await mongoose.startSession()
+           //  sess.startTransaction()
+              
+              const _id = req.params.withdrawerrequestId;
+              const  getWithdrawerRequest = await Withdrawrequest.findOne({_id: _id})
+               const  getUserDetails = await Member.findOne({_id: getWithdrawerRequest.userDetails})
+             const userId = getUserDetails._id
+             if(getWithdrawerRequest.status === "Completed" || getWithdrawerRequest.status === "Declined" ){
+                return  res.status(400).send({ status: 400, message:"This withdrawer request has been completed or cancelled"})
+
+             }else{    
+                        const transactionId = getWithdrawerRequest.transactionId
+                        const reference = v4()
+                        const account_bank= getWithdrawerRequest.bankCode
+                        const  account_number = getWithdrawerRequest.accountNumber
+                        const amount = getWithdrawerRequest.amount
+                        
+                        const bankBranch = getWithdrawerRequest.bankBranch
+                        const accountName = getWithdrawerRequest.accountName
+                        const narration = "Sent Fund by Admin"
+                        const currency = "NGN"
+                        const makepayment = await makePaymentNigeria(account_bank , account_number  , amount, narration , currency, reference,  accountName)
+                            console.log(makepayment.data)
+                            console.log(makepayment.status)
+                            console.log(makepayment.data.status)
+                             //console.log(sendmoney.data)
+                        
+                            
+
+
+                   
+                    if (makepayment.data  && makepayment.data.status === "success") {
+                        const updateReference = await Withdrawrequest.updateOne({ _id: _id }, { reference: reference }); 
+                        const updateTransaction = await Transaction.updateOne({_id:  transactionId }, { reference: reference });
+
+                            if (makepayment.data.data.status === "SUCCESSFUL" && makepayment.data.data.complete_message === "Transaction was successful"  ) {
+                                const updateWithdrawerrequest= await Withdrawrequest.updateOne({ _id: _id }, { status: "Completed",  flutterPaymentId: makepayment.data.data.id });    
+                                const updateTransaction = await Transaction.updateOne({_id:  transactionId }, { status: "Successful" });
+                                const from = {
+                                    name: process.env.emailName,
+                                    address: process.env.user	
+                                }
+                                const emailFrom = from; 
+                                const subject = 'Funds sent';                      
+                                const hostUrl =  process.env.hostUrl
+                                const hostUrl2 =   process.env.hostUrl2
+                                const username =  getUserDetails.username
+                                const   text = "Your withdrawer request has been approved and you funds has been sent" 
+                                const emailTo = getUserDetails.email
+                                const link = `${hostUrl}`;
+                                const link2 = `${hostUrl2}`;
+                                emailUtility(emailFrom, emailTo, subject, link, link2, text, username);
+    
+                              return res.status(200).send({ status: 200, message:"Flutter wave withdrawer posted succesfully"})
+                            }else{
+        
+                                    const updatePaymentStatus = await Withdrawrequest.updateOne({ _id : _id}, { status: "Processing", flutterPaymentId: makepayment.data.data.id });    
+                                    const from = {
+                                        name: process.env.emailName,
+                                        address: process.env.user	
+                                    }
+                                    const emailFrom = from; 
+                                    const subject = 'Fund processed';                      
+                                    const hostUrl =  process.env.hostUrl
+                                    const hostUrl2 =   process.env.hostUrl2
+                                    const username =  getUserDetails.username
+                                    const   text = "Your withdrawer request has been processsed, you will receive your funds soo" 
+                                    const emailTo = getUserDetails.email
+                                    const link = `${hostUrl}`;
+                                    const link2 = `${hostUrl2}`;
+                                    emailUtility(emailFrom, emailTo, subject, link, link2, text, username);
+                
+                                     return res.status(200).send({ status: 200, message:"Payment is being processed"})      
+                            }
+                    
+    
+                    }else{
+    
+                        console.log("enter trade")
+                        // console.log(reference)
+                       return res.status(400).send({ status: 400, message:"Payment not successful"})   
+                        // const updatePaymentStatus = await Trades.findOneAndUpdate({ _id }, { paymentStatus: "Failed" });  
+                    } 
+
+                   // await sess.commitTransaction()
+                   // sess.endSession(); 
+            }
+    }
+    catch(err){
+        console.log(err)
+       return res.status(500).send({ status: 500, message:"Error while approving withdrawer request "})
+    }
+
+};
+
+
+
+export async function updateFlutterResponse (req: any, res: any): Promise<Response> {
+    const {  id , status  , reference, complete_message} = req.body.data;
+    console.log("complete_message")  
+    console.log(complete_message)
+
+    console.log("reference")  
+    console.log(reference)
+     
+      console.log("status")
+      console.log(status)
+      try{
+       
+          const getwithdrawerrequest = await Withdrawrequest.findOne({reference: reference})
+          const getTransaction= await Transaction.findOne({reference: reference})
+          console.log("User Id")
+          console.log(getwithdrawerrequest)
+          const getUserDetails = await Member.findOne({_id:getwithdrawerrequest.userId})
+          //const sess = await mongoose.startSession()
+        //  sess.startTransaction()
+          const userId = getUserDetails._id
+          console.log("User Id")
+          console.log(userId)
+          console.log("getwithdrawerrequest")
+          console.log(getwithdrawerrequest)
+          const _id = getwithdrawerrequest._id;
+          const transactionId = getTransaction._id
+          if(getwithdrawerrequest.status === "Processing"){
+              if (status === "SUCCESSFUL" && complete_message === "Transaction was successful"  ) {
+                    const updateWithdrawerrequest= await Withdrawrequest.updateOne({ _id: _id }, { status: "Completed" });    
+                    const updateTransaction = await Transaction.updateOne({_id:  transactionId }, { status: "Successful" });
+                    const from = {
+                        name: process.env.emailName,
+                        address: process.env.user	
+                    }
+                    const emailFrom = from; 
+                    const subject = 'Funds sent';                      
+                    const hostUrl =  process.env.hostUrl
+                    const hostUrl2 =   process.env.hostUrl2
+                    const username =  getUserDetails.username
+                    const   text = "Your withdrawer request has been approved and you funds has been sent" 
+                    const emailTo = getUserDetails.email
+                    const link = `${hostUrl}`;
+                    const link2 = `${hostUrl2}`;
+                    emailUtility(emailFrom, emailTo, subject, link, link2, text, username);
+                  
+                
+                    return res.status(200).send({message:"Success"})
+              }else if (status === "FAILED" ) {
+                                    const amount =  getwithdrawerrequest.amount
+                                    const transAmount = parseFloat(amount)
+                                    const walletBalance =  parseFloat(getUserDetails.walletBalance)
+                                    const finalBalance  =  parseFloat(getUserDetails.walletBalance) + parseFloat(amount) 
+
+                                    if (getwithdrawerrequest.accountType === "Bank"){
+                                            var transactions = new Transaction({      
+                                                status: "Successful",
+                                                sellerId: userId, 
+                                                sellerDetails: userId,             
+                                                amount: amount.toFixed(2),
+                                                type : "Credit",
+                                                initialBalance : walletBalance.toFixed(2),
+                                                finalBalance: finalBalance.toFixed(2),
+                                                bankName: getwithdrawerrequest.bankName,
+                                                accountName: getwithdrawerrequest.accountName,
+                                                accountNumber: getwithdrawerrequest.accountNumber,
+                                                narration : "Transaction Reversed",
+                                                accountType: getwithdrawerrequest.accountType,
+                                                bankBranch: getwithdrawerrequest.bankBranch,
+                                                branchName: getwithdrawerrequest.branchName
+                                                
+                                            });
+                                           
+                                    }else{
+                                            transactions = new Transaction({      
+                                                status: "Successful",
+                                                sellerId: userId,    
+                                                sellerDetails: userId,          
+                                                amount: amount.toFixed(2),
+                                                type : "Credit",
+                                                initialBalance : walletBalance.toFixed(2),
+                                                finalBalance: finalBalance.toFixed(2),
+                                                mobileNumber: getwithdrawerrequest.mobileNumber,
+                                                mobileNetwork: getwithdrawerrequest.mobileNetwork,
+                                                narration : "Transaction Reversed",
+                                                accountType: getwithdrawerrequest.accountType,
+                                                accountName: getwithdrawerrequest.accountName
+                                                
+                                            });
+                                         
+                                   }
+                                            const saveTransaction = await  transactions.save()      
+                                            const updateUserWallet = await Member.updateOne({_id:  userId }, { walletBalance: finalBalance.toFixed(2) });  
+                                            const updatePaymentStatus = await Withdrawrequest.updateOne({ _id : _id }, { status: "Declined" });  
+                                            const updateTransaction = await Transaction.updateOne({_id:  transactionId }, { status: "Failed" });
+                                             return res.status(200).send({message:"Success"})
+  
+              }else {
+                   console.log("i think its still processing")
+                   console.log(status)
+                   return  res.status(200).send({message:"Success"})
+              }
+          }else{
+                console.log("This trade has been completed ,  Invalid or has not been paid")
+                return res.status(200).send({message:"Success"})
+          }  
+         // await sess.commitTransaction()
+         // sess.endSession();
+      }catch(err){
+          console.log(err)
+           return  res.status(500).send({message:"Error while completing trade "})
+      }
+  };
+
+
+
+  const makePaymentNigeria = async (account_bank: string , account_number: string  , amount: string, narration :string, currency: string, reference: string,  accountName: string) => {
+    try {
+     // const referenceNumber =
+      console.log("make payment")
+      const headers = {
+          'Authorization': process.env.flutterwaveToken!,
+          'Content-Type': 'application/json'      
+          }
+          const params = {
+
+            
+
+            account_bank: account_bank,
+            account_number: account_number,
+            amount: amount,
+            narration: narration || "Withdraw funds",
+            currency: currency,
+            reference : `${reference}`,
+             callback_url : `https://fierce-sierra-41986.herokuapp.com/flutter/webhook/payment/status/${reference}`,
+            beneficiary_name: accountName,
+          
+          }  
+         // console.log(params)
+       const  sendmoney = await axios.post('https://api.flutterwave.com/v3/transfers', params, {headers: headers}) 
+         // console.log(sendmoney.data)
+        
+  
+      return sendmoney.data
+    } catch (err) { 
+      console.log(err)
+      return err
+    }
+  }
+
+
 
 
 const getQueryNoAmount = (queryObj: any) =>{

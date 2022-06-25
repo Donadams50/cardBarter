@@ -12,7 +12,7 @@ import { Transaction } from '../transactions/transaction.model';
 
 // create configuration
 export async function postConfiguration(req: Request, res: Response): Promise<Response> {
-    const { minimumWithdrawer, maximumWithdrawer } = req.body;
+    const { minimumWithdrawer, maximumWithdrawer , automatedWithdrawer} = req.body;
      
                 try{
                     const emailTo = process.env.user!
@@ -29,6 +29,7 @@ export async function postConfiguration(req: Request, res: Response): Promise<Re
                     const adminconfig = new Adminconfig({
                             minimumWithdrawer: minimumWithdrawer,
                             maximumWithdrawer: maximumWithdrawer
+                            // automatedWithdrawer :automatedWithdrawer 
                     });
                     const saveadminconfig = await adminconfig.save()
                     emailUtility(emailFrom, emailTo, subject,  link, link2, message, name);
@@ -44,7 +45,7 @@ export async function postConfiguration(req: Request, res: Response): Promise<Re
 export async function updateConfiguration(req: Request, res: Response): Promise<Response> {
     const _id = req.params.id;
  
-    const { minimumWithdrawer, maximumWithdrawer } = req.body;  
+    const { minimumWithdrawer, maximumWithdrawer ,automatedWithdrawer} = req.body;  
             try{
                  const emailTo = process.env.user!
                  const from = {
@@ -62,6 +63,7 @@ export async function updateConfiguration(req: Request, res: Response): Promise<
                         _id : _id,
                         minimumWithdrawer: minimumWithdrawer,
                         maximumWithdrawer: maximumWithdrawer
+                        // automatedWithdrawer: automatedWithdrawer
                      });
                      console.log(adminconfig)
                      const updaterate = await Adminconfig.updateOne( {_id}, adminconfig)

@@ -178,7 +178,7 @@ export async function declineGiftcardTrade (req: any, res: any): Promise<Respons
                const link2 = `${hostUrl2}`;
                 emailUtility(emailFrom, emailTo, subject, link, link2, text, username);
   
-                 return res.status(200).send({ status: 200, message:"   Giftcard trade declined Succesfull" })
+                 return res.status(200).send({ status: 200, message:"Giftcard trade declined Succesfull" })
               }else{
                  return res.status(400).send({ status: 400, message:"This trade has been completed or Invalid"})
               }

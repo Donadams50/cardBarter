@@ -1,4 +1,5 @@
 export async function uploadFile(req: any, res: any): Promise<Response> {
+    console.log(req.file)
     const fileUrl =  req.file.url
     try{              
     

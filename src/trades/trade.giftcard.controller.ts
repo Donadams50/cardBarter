@@ -209,15 +209,39 @@ export async function getAllGiftcardTrade (req: any, res: any): Promise<Response
 export async function getUserGiftcardTrade (req: any, res: any): Promise<Response> {
     try{
             const query = getQueryNoAmount({ ...req.query })
-            const finduserTrade = await Tradegiftcard.find({...query, userId: req.user.id}).sort({"_id": -1})
-            .populate('userDetails')  
-             return res.status(200).send({status: 200, message:finduserTrade})
+            const limit = req.query.limit
+            
+            if(limit){
+                const finduserTrade = await Tradegiftcard.find({...query, userId: req.user.id}).sort({"_id": -1}).limit(limit)
+                .populate('userDetails')  
+                 return res.status(200).send({status: 200, message:finduserTrade})
+
+            }else{
+                const finduserTrade = await Tradegiftcard.find({...query, userId: req.user.id}).sort({"_id": -1})
+                .populate('userDetails')  
+                 return res.status(200).send({status: 200, message:finduserTrade})
+
+            }
+          
     }catch(err){
            console.log(err)
           return  res.status(500).send({message:"Error while getting user giftcard trade "})
        }
 };
 
+
+export async function userCompletedTrade (req: any, res: any): Promise<Response> {
+    try{
+            
+             const completedTrade = await Tradegiftcard.countDocuments({userId : req.user.id, tradeStatus : "Completed"})   
+             return res.status(200).send({status: 200, completedTrade:completedTrade})
+
+          
+    }catch(err){
+           console.log(err)
+          return  res.status(500).send({message:"Error while getting user completed trade "})
+       }
+};
 
 const getQueryNoAmount = (queryObj: any) =>{
     let monthAgo = moment().subtract(1, 'months').format('YYYY-MM-DD');

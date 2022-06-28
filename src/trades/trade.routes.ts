@@ -22,7 +22,7 @@ router.get("/giftcard/trade/all",  verifyToken, isAdminOrSubadmin,   tradegiftca
 router.get("/giftcard/trade/user",  verifyToken, isExchanger,   tradegiftcard.getUserGiftcardTrade)
 router.patch("/giftcard/approve/:tradeId",  verifyToken, isAdminOrSubadmin,   tradegiftcard.approveGiftcardTrade)
 router.patch("/giftcard/decline/:tradeId",  verifyToken, isAdminOrSubadmin,   tradegiftcard.declineGiftcardTrade)
-
+router.get("/giftcard/completed/trade",  verifyToken, isExchanger,   tradegiftcard.userCompletedTrade)
 
 export { router as tradeRouter };
 

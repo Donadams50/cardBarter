@@ -951,21 +951,6 @@ export async function userDashboard(req: any, res: Response): Promise<Response> 
 };
     
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const getQueryThisMonth = () =>{
         const from_date = moment().startOf('month').format('YYYY-MM-DD hh:mm');
         let to_date = moment(new Date()).format('YYYY-MM-DD');
@@ -973,11 +958,6 @@ const getQueryThisMonth = () =>{
        const query = {  createdAt:{ $gte: new Date(new Date(from_date).setHours(0, 0, 0)), $lte: new Date(new Date(to_date).setHours(23, 59, 59)) }}
        return query
     }
-
-
-
-
-
 
 // generate 6 alphanumeric code
 function getCode() {

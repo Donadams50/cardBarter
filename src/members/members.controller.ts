@@ -943,7 +943,7 @@ export async function userDashboard(req: any, res: Response): Promise<Response> 
             const findWalletBalance = await Member.findOne({_id: id}, "waletBalance")
 
 
-            return res.status(200).send({ status: 200, message : { thisMonthIncome: thisMonthCreditGiftcard,  thisMonthWithdrawal: thisMonthDebit, totalSpent: allTimeDebit, tottalSpent: findWalletBalance.waletBalance}})         
+            return res.status(200).send({ status: 200, message : { thisMonthIncome: thisMonthCreditGiftcard,  thisMonthWithdrawal: thisMonthDebit, totalSpent: allTimeDebit, walletBalance: findWalletBalance.waletBalance}})         
         }catch(err){
             console.log(err)
             return res.status(500).send({ status:500,message:"Error while getting wallet balance "})
